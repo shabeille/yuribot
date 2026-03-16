@@ -3,9 +3,11 @@ import json
 import asyncio
 import aiohttp
 import argparse
+from random import choice
+from dotenv import load_dotenv
+
 import discord
 from discord.ext import tasks
-from dotenv import load_dotenv
 
 from safebooru import SafebooruBrowser
 
@@ -47,6 +49,9 @@ with open("stat.json") as file:
     contents = json.loads(file.read())
     total_sent = contents["sent"]
 
+with open("affirmations.json") as file:
+    affirmations: list = json.loads(file.read())
+
 
 @bot.event
 async def on_ready():
@@ -65,7 +70,7 @@ async def on_ready():
 async def refresh_yuri():
     print("\nRefreshing yuri cache...")
     await browser.update_cache()
-    print("Refreshed!\n")
+    print(f"Refreshed! {await browser.get_cache_size()} posts retrieved\n")
 
 
 @bot.slash_command(
@@ -82,7 +87,7 @@ async def refresh_yuri():
     }
 )
 async def affirmation(ctx: discord.ApplicationContext):
-    await ctx.respond("good girl")
+    await ctx.respond(choice(affirmations))
 
 
 @bot.slash_command(

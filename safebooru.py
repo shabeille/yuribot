@@ -50,3 +50,6 @@ class SafebooruBrowser:
             post for post in self._cached_posts
             if all(tag in post["tags"].split(' ') for tag in args)
         ])
+
+    async def get_cache_size(self):
+        return len(self._cached_posts)
