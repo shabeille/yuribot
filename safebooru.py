@@ -12,7 +12,7 @@ prefix: Template = Template(
 )
 
 class SafebooruBrowser:
-    def __init__(self, session, cache_size=1000, default_tags=None, remove_duplicates=True):
+    def __init__(self, session, cache_size=1000, default_tags=None):
         self._session = session
 
         if default_tags is not None and type(default_tags) not in (tuple, list):
@@ -22,8 +22,6 @@ class SafebooruBrowser:
 
         self.cache_size = cache_size
         self._cached_posts = []
-
-        self.remove_duplicates = remove_duplicates
 
     async def _get_json_response(self, url):
         async with self._session.get(url) as resp:
