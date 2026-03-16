@@ -2,13 +2,40 @@ import os
 import json
 import asyncio
 import aiohttp
+import argparse
 import discord
 from discord.ext import tasks
 from dotenv import load_dotenv
 
 from safebooru import SafebooruBrowser
 
+
+parser = argparse.ArgumentParser(
+    prog='yuribot',
+    description='discord bot to serve yuri from safebooru',
+)
+
 print("meowing...")
+
+load_dotenv()
+token = os.getenv("TOKEN")
+
+if token is None:
+    exit("You must specify your bot token in a .env file!")
+
+parser.add_argument(
+    "-c", "--cache_size",
+    default=1000, type=int,
+    help="How many posts the bot should store in its cache"
+)
+
+parser.add_argument(
+    "-r", "--refresh_time",
+    default=10, type=float,
+    help="How long the bot should wait before refreshing its yuri cache"
+)
+
+args = parser.parse_args()
 
 asyncio.set_event_loop(asyncio.new_event_loop())
 
@@ -27,13 +54,14 @@ async def on_ready():
 
     if session is None:
         session = aiohttp.ClientSession()
-        browser = SafebooruBrowser(session, default_tags=("yuri",))
+        browser = SafebooruBrowser(session, default_tags=("yuri",), cache_size=args.cache_size)
         refresh_yuri.start()
 
     print(f"{bot.user} is ready and online!")
+    await bot.change_presence(status=discord.Status.online)
 
 
-@tasks.loop(minutes=10)
+@tasks.loop(minutes=args.refresh_time)
 async def refresh_yuri():
     print("\nRefreshing yuri cache...")
     await browser.update_cache()
@@ -82,21 +110,21 @@ async def yuri(ctx: discord.ApplicationContext):
         color=discord.Colour.from_rgb(203, 166, 247)
     )
     embed.set_image(url=response["file_url"])
-    embed.set_footer(text=f"This is yuribot's {total_sent}"
-                          f"{'st' if str(total_sent)[-1] == '1' 
-                          else 'nd' if str(total_sent)[-1] == '2' 
-                          else 'th'} post :3")
+    embed.set_footer(
+        text=f"This is yuribot's {total_sent}"
+        f"{'st' if str(total_sent)[-1] == '1'
+        else 'nd' if str(total_sent)[-1] == '2'
+        else 'th'} post :3"
+    )
 
     print(f"Sending yuri #{total_sent}: {response["file_url"]}")
 
     await ctx.respond(embed=embed)
 
 
-load_dotenv()
-token = os.getenv("TOKEN")
 bot.run(token)
 
-print("\nClosing session and updating json...")
+print("losing session and updating json...") # if keyboard interrupted in a terminal it ouptuts "^Closing"
 
 if session:
     asyncio.run(session.close())
