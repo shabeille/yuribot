@@ -58,7 +58,7 @@ async def on_ready():
         refresh_yuri.start()
 
     print(f"{bot.user} is ready and online!")
-    await bot.change_presence(status=discord.Status.online)
+    await bot.change_presence(status=discord.Status.online) # doesnt work for some reason
 
 
 @tasks.loop(minutes=args.refresh_time)
@@ -124,7 +124,7 @@ async def yuri(ctx: discord.ApplicationContext):
 
 bot.run(token)
 
-print("losing session and updating json...") # if keyboard interrupted in a terminal it ouptuts "^Closing"
+print("\nClosing session and updating json...")
 
 if session:
     asyncio.run(session.close())
