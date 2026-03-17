@@ -11,6 +11,9 @@ from discord.ext import tasks
 
 from safebooru import SafebooruBrowser
 
+STAT_PATH = "stat.json"
+AFFIRMATIONS_PATH = "affirmations.json"
+CLICKER_PATH = "clicker.mp3"
 
 parser = argparse.ArgumentParser(
     prog='yuribot',
@@ -45,11 +48,11 @@ bot = discord.Bot()
 session: None | aiohttp.ClientSession = None
 browser: None | SafebooruBrowser = None
 
-with open("stat.json") as file:
+with open(STAT_PATH) as file:
     contents = json.loads(file.read())
     total_sent = contents["sent"]
 
-with open("affirmations.json") as file:
+with open(AFFIRMATIONS_PATH) as file:
     affirmations: list = json.loads(file.read())
 
 
@@ -61,6 +64,12 @@ async def on_ready():
         session = aiohttp.ClientSession()
         browser = SafebooruBrowser(session, default_tags=("yuri",), cache_size=args.cache_size)
         refresh_yuri.start()
+
+        try:
+            from clicker import register_clicker
+            register_clicker(bot, session)
+        except ImportError:
+            print("secret clicker module not present")
 
     print(f"{bot.user} is ready and online!")
     await bot.change_presence(status=discord.Status.online) # doesnt work for some reason
@@ -79,15 +88,22 @@ async def refresh_yuri():
     integration_types={
         discord.IntegrationType.guild_install,
         discord.IntegrationType.user_install
-    },
-    contexts={
-        discord.InteractionContextType.guild,
-        discord.InteractionContextType.bot_dm,
-        discord.InteractionContextType.private_channel
     }
 )
 async def affirmation(ctx: discord.ApplicationContext):
     await ctx.respond(choice(affirmations))
+
+
+@bot.slash_command(
+    name="clicker",
+    description="rewawrd",
+    integration_types={
+        discord.IntegrationType.guild_install,
+        discord.IntegrationType.user_install
+    }
+)
+async def clicker(ctx: discord.ApplicationContext):
+    await ctx.respond(file=discord.File(CLICKER_PATH))
 
 
 @bot.slash_command(
@@ -96,11 +112,6 @@ async def affirmation(ctx: discord.ApplicationContext):
     integration_types={
         discord.IntegrationType.guild_install,
         discord.IntegrationType.user_install
-    },
-    contexts={
-        discord.InteractionContextType.guild,
-        discord.InteractionContextType.bot_dm,
-        discord.InteractionContextType.private_channel
     }
 )
 async def yuri(ctx: discord.ApplicationContext):
@@ -134,7 +145,7 @@ print("\nClosing session and updating json...")
 if session:
     asyncio.run(session.close())
 
-with open("stat.json", "w") as file:
+with open(STAT_PATH, "w") as file:
     contents["sent"] = total_sent
     file.write(json.dumps(contents))
 
