@@ -122,7 +122,9 @@ async def yuri(ctx: discord.ApplicationContext):
 
     embed = discord.Embed(
         title="Yuri!!!",
-        description=f"Source: {response["source"]}",
+        description=
+        f"[[Original Source]({response["source"]})] "
+        f"[[View on Safebooru](https://safebooru.org/index.php?page=post&s=view&id={response["id"]})]",
         color=discord.Colour.from_rgb(203, 166, 247)
     )
     embed.set_image(url=response["file_url"])
