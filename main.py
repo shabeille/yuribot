@@ -20,6 +20,33 @@ parser = argparse.ArgumentParser(
     description='discord bot to serve yuri from safebooru',
 )
 
+parser.add_argument(
+    "-c", "--cache_size",
+    default=100, type=int,
+    help="How many posts the bot should store in its cache"
+)
+
+parser.add_argument(
+    "-r", "--refresh_time",
+    default=5, type=float,
+    help="How long the bot should wait (sec) before refreshing its yuri cache"
+)
+
+parser.add_argument(
+    "-x", "--large",
+    action="store_true",
+    help="When enabled, the bot will embed the full image rather than the smaller sample image"
+)
+
+parser.add_argument(
+    "-l", "--latest",
+    action="store_true",
+    help="When enabled, this will retrieve the latest posts instead of random posts into the cache. Faster, but less random! "
+         "It is recommended that you use higher values for cache_size (e.g. 1000) and refresh_time (e.g. 3600s) when enabling this"
+)
+
+args = parser.parse_args()
+
 print("meowing...")
 
 load_dotenv()
@@ -27,20 +54,6 @@ token = os.getenv("TOKEN")
 
 if token is None:
     exit("You must specify your bot token in a .env file!")
-
-parser.add_argument(
-    "-c", "--cache_size",
-    default=1000, type=int,
-    help="How many posts the bot should store in its cache"
-)
-
-parser.add_argument(
-    "-r", "--refresh_time",
-    default=10, type=float,
-    help="How long the bot should wait before refreshing its yuri cache"
-)
-
-args = parser.parse_args()
 
 asyncio.set_event_loop(asyncio.new_event_loop())
 
@@ -62,8 +75,11 @@ async def on_ready():
 
     if session is None:
         session = aiohttp.ClientSession()
-        browser = SafebooruBrowser(session, default_tags=("yuri",), cache_size=args.cache_size)
+        browser = SafebooruBrowser(session, default_tags="yuri", cache_size=args.cache_size, get_latest=args.latest)
         refresh_yuri.start()
+
+        if not args.latest:
+            await browser.refill_cache()
 
         try:
             from clicker import register_clicker
@@ -75,11 +91,14 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.online) # doesnt work for some reason
 
 
-@tasks.loop(minutes=args.refresh_time)
+@tasks.loop(seconds=args.refresh_time)
 async def refresh_yuri():
-    print("\nRefreshing yuri cache...")
-    await browser.update_cache()
-    print(f"Refreshed! {await browser.get_cache_size()} posts retrieved\n")
+    if args.latest:
+        print("\nRefreshing yuri cache...")
+        await browser.refill_cache()
+        print(f"Refreshed! {await browser.get_cache_size()} posts retrieved\n")
+    else:
+        await browser.update_one()
 
 
 @bot.slash_command(
@@ -120,6 +139,8 @@ async def yuri(ctx: discord.ApplicationContext):
 
     total_sent += 1
 
+    image_url = response["file_url"] if args.large else response["sample_url"]
+
     embed = discord.Embed(
         title="Yuri!!!",
         description=
@@ -127,7 +148,7 @@ async def yuri(ctx: discord.ApplicationContext):
         f"[[View on Safebooru](https://safebooru.org/index.php?page=post&s=view&id={response["id"]})]",
         color=discord.Colour.from_rgb(203, 166, 247)
     )
-    embed.set_image(url=response["file_url"])
+    embed.set_image(url=image_url)
     embed.set_footer(
         text=f"This is yuribot's {total_sent}"
         f"{'st' if str(total_sent)[-1] == '1'
@@ -135,7 +156,7 @@ async def yuri(ctx: discord.ApplicationContext):
         else 'th'} post :3"
     )
 
-    print(f"Sending yuri #{total_sent}: {response["file_url"]}")
+    print(f"Sending yuri #{total_sent}: {image_url}")
 
     await ctx.respond(embed=embed)
 
