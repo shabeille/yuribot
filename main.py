@@ -3,6 +3,7 @@ import json
 import asyncio
 import aiohttp
 import argparse
+from time import sleep
 from random import choice
 from dotenv import load_dotenv
 
@@ -22,14 +23,14 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument(
     "-c", "--cache_size",
-    default=100, type=int,
+    default=1000, type=int,
     help="How many posts the bot should store in its cache"
 )
 
 parser.add_argument(
     "-r", "--refresh_time",
     default=5, type=float,
-    help="How long the bot should wait (sec) before refreshing its yuri cache"
+    help="How long the bot should wait (min) before refreshing its yuri cache"
 )
 
 parser.add_argument(
@@ -41,8 +42,7 @@ parser.add_argument(
 parser.add_argument(
     "-l", "--latest",
     action="store_true",
-    help="When enabled, this will retrieve the latest posts instead of random posts into the cache. Faster, but less random! "
-         "It is recommended that you use higher values for cache_size (e.g. 1000) and refresh_time (e.g. 3600s) when enabling this"
+    help="When enabled, this will retrieve the latest posts instead of random posts into the cache"
 )
 
 args = parser.parse_args()
@@ -55,7 +55,7 @@ token = os.getenv("TOKEN")
 if token is None:
     exit("You must specify your bot token in a .env file!")
 
-asyncio.set_event_loop(asyncio.new_event_loop())
+asyncio.set_event_loop(asyncio.new_event_loop()) # python3.14 shenanigans
 
 bot = discord.Bot()
 session: None | aiohttp.ClientSession = None
@@ -74,31 +74,31 @@ async def on_ready():
     global session, browser, total_sent # this is how you know this code sucks
 
     if session is None:
+        print("Initialising session...")
         session = aiohttp.ClientSession()
-        browser = SafebooruBrowser(session, default_tags="yuri", cache_size=args.cache_size, get_latest=args.latest)
+        browser = SafebooruBrowser(
+            session,
+            default_tags=("yuri",),
+            cache_size=args.cache_size,
+            fetch_from_latest=args.latest
+        )
         refresh_yuri.start()
-
-        if not args.latest:
-            await browser.refill_cache()
 
         try:
             from clicker import register_clicker
             register_clicker(bot, session)
         except ImportError:
-            print("secret clicker module not present")
+            print("secret module not present")
 
     print(f"{bot.user} is ready and online!")
     await bot.change_presence(status=discord.Status.online) # doesnt work for some reason
 
 
-@tasks.loop(seconds=args.refresh_time)
+@tasks.loop(minutes=args.refresh_time)
 async def refresh_yuri():
-    if args.latest:
-        print("\nRefreshing yuri cache...")
-        await browser.refill_cache()
-        print(f"Refreshed! {await browser.get_cache_size()} posts retrieved\n")
-    else:
-        await browser.update_one()
+    print("\nRefreshing yuri cache...")
+    await browser.update_cache()
+    print(f"Refreshed! {await browser.get_cache_size()} posts retrieved\n")
 
 
 @bot.slash_command(
@@ -160,8 +160,16 @@ async def yuri(ctx: discord.ApplicationContext):
 
     await ctx.respond(embed=embed)
 
+running = True
 
-bot.run(token)
+while running:
+    try:
+        bot.run(token)
+    except aiohttp.ClientConnectorError as e:
+        print(f"Network exploded :( {e}\ntrying again in 30sec...")
+        sleep(30)
+    else:
+        running = False
 
 print("\nClosing session and updating json...")
 

@@ -7,7 +7,7 @@ https://discord.com/oauth2/authorize?client_id=1482579213729923112
 
 yeah the code is a bit ugly but whatever
 
-it works by retrieving a Lot of posts tagged with yuri from safebooru every 10 minutes and then randomly choosing one every time /yuri is called
+it works by retrieving a Lot of posts tagged with yuri from safebooru every couple minutes and then randomly choosing one every time /yuri is called
 
 made sure to add your token in a .env file if you're hosting this yourself
 
@@ -33,6 +33,7 @@ else:
 1. clone the repo
 2. create a .env file with `TOKEN=your_discord_token`
 3. install dependencies  
-   `pip install aiohttp python-dotenv py-cord`
+   `pip install aiohttp python-dotenv py-cord audioop-lts`  
+   audioop-lts isn't used by the program but py-cord throws a fit if it's not installed. it's probably my fault but i cant be bothered to do anything about it :3
 4. run the bot  
-   `python bot.py`
+   `python main.py`
