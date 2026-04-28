@@ -133,9 +133,25 @@ async def clicker(ctx: discord.ApplicationContext):
         discord.IntegrationType.user_install
     }
 )
-async def yuri(ctx: discord.ApplicationContext):
+@discord.option(
+    "tags",
+    type=discord.SlashCommandOptionType.string,
+    default="",
+    description="Additional tags to filter through, separated by commas (e.g. 'kissing, 2girls')"
+)
+async def yuri(ctx: discord.ApplicationContext, tags: str):
     global total_sent
-    response = await browser.get_random()
+
+    tags_list: list = [] if tags == "" else [tag.strip(' ') for tag in tags.split(',')]
+
+    try:
+        response = await browser.get_random(*tags_list)
+    except IndexError:
+        await ctx.respond(
+            "Could not find any yuri :( Make sure your tags are correct, or try again later!! :3",
+            ephemeral=True
+        )
+        return
 
     total_sent += 1
 
@@ -160,16 +176,15 @@ async def yuri(ctx: discord.ApplicationContext):
 
     await ctx.respond(embed=embed)
 
-running = True
 
-while running:
+while True:
     try:
         bot.run(token)
     except aiohttp.ClientConnectorError as e:
         print(f"Network exploded :( {e}\ntrying again in 30sec...")
         sleep(30)
     else:
-        running = False
+        break
 
 print("\nClosing session and updating json...")
 

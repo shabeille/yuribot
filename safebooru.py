@@ -2,8 +2,6 @@ from string import Template
 from urllib.parse import urljoin
 from random import choice
 
-POSTS_PER_PAGE = 42
-
 website_url: str = "https://safebooru.org/"
 prefix: Template = Template(
     "index.php?page=dapi&s=post&q=index&json=1"
@@ -51,7 +49,7 @@ class SafebooruBrowser:
         """
         return choice(self._cached_posts if len(args) == 0 else [
             post for post in self._cached_posts
-            if all(tag in post["tags"].split(' ') for tag in args)
+            if all(tag in post["tags"].split() for tag in args)
         ])
 
     async def get_cache_size(self):
