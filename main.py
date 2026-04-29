@@ -148,13 +148,13 @@ async def clicker(ctx: discord.ApplicationContext):
 async def yuri(ctx: discord.ApplicationContext, tags: str):
     global total_sent
 
-    tags_list: list = [] if tags == "" else [tag.strip(' ') for tag in tags.split(',')]
+    tags_list: list = [] if tags == "" else [tag.strip() for tag in tags.split(',')]
 
     try:
         response = await browser.get_random(*tags_list)
     except IndexError:
         await ctx.respond(
-            "Could not find any yuri :( Make sure your tags are correct, or try again later!! :3",
+            "Could not find any yuri :pensive: Make sure your tags are correct, or try again later!! :3",
             ephemeral=True
         )
         return
