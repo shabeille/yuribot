@@ -12,6 +12,12 @@ from discord.ext import tasks
 
 from safebooru import SafebooruBrowser
 
+TAGS = ["yuri", "2girls"]
+BLACKLIST = [
+    "nude", "ass_focus", "sexually_suggestive", "implied_sex",
+    "blood", "violence"
+]
+
 STAT_PATH = "stat.json"
 AFFIRMATIONS_PATH = "affirmations.json"
 CLICKER_PATH = "clicker.mp3"
@@ -78,7 +84,7 @@ async def on_ready():
         session = aiohttp.ClientSession()
         browser = SafebooruBrowser(
             session,
-            default_tags=("yuri",),
+            default_tags= TAGS + [f"-{x}" for x in BLACKLIST],
             cache_size=args.cache_size,
             fetch_from_latest=args.latest
         )
