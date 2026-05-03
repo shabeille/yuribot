@@ -173,9 +173,7 @@ async def yuri(ctx: discord.ApplicationContext, tags: str):
     embed.set_image(url=image_url)
     embed.set_footer(
         text=f"This is yuribot's {total_sent}"
-        f"{'st' if str(total_sent)[-1] == '1'
-        else 'nd' if str(total_sent)[-1] == '2'
-        else 'th'} post :3"
+        f"{choice(['st', 'nd', 'rd', 'th'])} post :3"
     )
 
     print(f"Sending yuri #{total_sent}: {image_url}")
