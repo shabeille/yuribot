@@ -5,10 +5,13 @@ import aiohttp
 import argparse
 from time import sleep
 from random import choice
+
 from dotenv import load_dotenv
 
 import discord
 from discord.ext import tasks
+from discord.types.components import ActionRow
+from discord.ui import Button
 
 from safebooru import SafebooruBrowser
 
@@ -163,11 +166,21 @@ async def yuri(ctx: discord.ApplicationContext, tags: str):
 
     image_url = response["file_url"] if args.large else response["sample_url"]
 
+    view = discord.ui.View()
+    view.add_item(discord.ui.Button(
+        style=discord.ButtonStyle.url,
+        label="Original Source",
+        url=response["source"]
+    ))
+    view.add_item(discord.ui.Button(
+        style=discord.ButtonStyle.url,
+        label="View on Safebooru",
+        url=f"https://safebooru.org/index.php?page=post&s=view&id={response['id']}"
+    ))
+
     embed = discord.Embed(
         title="Yuri!!!",
-        description=
-        f"[[Original Source]({response["source"]})] "
-        f"[[View on Safebooru](https://safebooru.org/index.php?page=post&s=view&id={response["id"]})]",
+        description=f"Tags used: `{" ".join(tags_list)}`" if tags_list else None,
         color=discord.Colour.from_rgb(203, 166, 247)
     )
     embed.set_image(url=image_url)
@@ -178,7 +191,7 @@ async def yuri(ctx: discord.ApplicationContext, tags: str):
 
     print(f"Sending yuri #{total_sent}: {image_url}")
 
-    await ctx.respond(embed=embed)
+    await ctx.respond(embed=embed, view=view)
 
 
 while True:
