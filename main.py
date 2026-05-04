@@ -167,11 +167,14 @@ async def yuri(ctx: discord.ApplicationContext, tags: str):
     image_url = response["file_url"] if args.large else response["sample_url"]
 
     view = discord.ui.View()
-    view.add_item(discord.ui.Button(
-        style=discord.ButtonStyle.url,
-        label="Original Source",
-        url=response["source"]
-    ))
+
+    if response["source"] and response["source"] != "":
+        view.add_item(discord.ui.Button(
+            style=discord.ButtonStyle.url,
+            label="Original Source",
+            url=response["source"]
+        ))
+
     view.add_item(discord.ui.Button(
         style=discord.ButtonStyle.url,
         label="View on Safebooru",
