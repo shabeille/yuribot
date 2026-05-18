@@ -14,8 +14,8 @@ from safebooru import SafebooruBrowser
 
 TAGS = ["yuri", "2girls"]
 BLACKLIST = [
-    "nude", "ass_focus", "sexually_suggestive", "implied_sex", "loli", 
-    "blood", "violence"
+    "nude", "ass_focus", "sexually_suggestive", "implied_sex",
+    "blood", "violence", "loli"
 ]
 
 STAT_PATH = "stat.json"
