@@ -113,7 +113,7 @@ class YuriBotCog(discord.Cog):
     )
     async def yuri(self, ctx: discord.ApplicationContext, tags: str):
         tags_list: list = [] if tags == "" \
-            else ([tag.strip() for tag in tags.split(',')])[:get_char_index_else_length(tags, '&')]
+            else ([tag.strip() for tag in (tags[:get_char_index_else_length(tags, '&')]).split(',')])
 
         try:
             response = await self.bot.browser.get_random(*tags_list)
