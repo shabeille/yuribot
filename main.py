@@ -17,7 +17,7 @@ from safebooru import SafebooruBrowser
 
 TAGS = ["yuri", "2girls"]
 BLACKLIST = [
-    "nude", "ass_focus", "sexually_suggestive", "implied_sex",
+    "nude", "ass_focus", "sexually_suggestive", "implied_sex", "loli", 
     "blood", "violence"
 ]
 
