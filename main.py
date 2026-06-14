@@ -68,6 +68,20 @@ def get_char_index_else_length(string: str, character: chr) -> int:
     return string.index(character)
 
 
+class RepeatView(discord.ui.View):
+    def __init__(self, cog: "YuriBotCog", tags_list):
+        super().__init__()
+        self.cog = cog
+        self.tags_list = tags_list
+
+    @discord.ui.button(
+        label="Repeat",
+        style=discord.ButtonStyle.primary
+    )
+    async def repeat_callback(self, button, interaction):
+        await self.cog.send_yuri(interaction.response.send_message, self.tags_list)
+
+
 class YuriBotCog(discord.Cog):
     def __init__(self, bot: "YuriBot"):
         self.bot = bot
@@ -115,10 +129,14 @@ class YuriBotCog(discord.Cog):
         tags_list: list = [] if tags == "" \
             else ([tag.strip() for tag in (tags[:get_char_index_else_length(tags, '&')]).split(',')])
 
+        await self.send_yuri(ctx.respond, tags_list)
+
+    async def send_yuri(self, send, tags_list: list):
         try:
             response = await self.bot.browser.get_random(*tags_list)
         except IndexError:
-            await ctx.respond(
+
+            await send(
                 "Could not find any yuri :pensive: Make sure your tags are correct, or try again later!! :3",
                 ephemeral=True
             )
@@ -126,7 +144,7 @@ class YuriBotCog(discord.Cog):
 
         image_url = response["file_url"] if self.bot.large else response["sample_url"]
 
-        view = discord.ui.View()
+        view = RepeatView(self, tags_list)
 
         if response["source"] and response["source"] != "":
             view.add_item(discord.ui.Button(
@@ -148,13 +166,13 @@ class YuriBotCog(discord.Cog):
         )
         embed.set_image(url=image_url)
         embed.set_footer(
-            text=f"This is yuribot's {self.bot.total_sent}"
+            text=f"This is {self.bot.user.display_name}'s {self.bot.total_sent}"
                  f"{choice(['st', 'nd', 'rd', 'th'])} post :3"
         )
 
         print(f"Sending yuri #{self.bot.total_sent}: {image_url}")
 
-        await ctx.respond(embed=embed, view=view)
+        await send(embed=embed, view=view)
         self.bot.total_sent += 1
         self.bot.post_sent = True
 
@@ -219,7 +237,6 @@ class YuriBot(discord.Bot):
         await self.session.close()
         self.update_stat_file()
         await super().close()
-
 
 
 async def main():
