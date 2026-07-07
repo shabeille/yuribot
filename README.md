@@ -19,8 +19,6 @@ dependencies
 * python-dotenv
 * py-cord
 
-made in python 3.14 hence why there's some seemingly weird oddities in the code bc py-cord is typically used with python 3.9 but i forgot to set my python version to that when starting the project so i just opted in for shitty workarounds instead >~<
-
 commands
 -
 `/yuri` - sends a random yuri image from the cache  
