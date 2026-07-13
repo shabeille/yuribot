@@ -11,6 +11,7 @@ import discord
 from discord.ext import tasks
 
 from safebooru import SafebooruBrowser
+from stats_mgr import StatsManager
 
 TAGS = ["yuri", "2girls"]
 BLACKLIST = [
@@ -97,7 +98,7 @@ class YuriBotCog(discord.Cog):
         await self.bot.browser.update_cache()
         print(f"Refreshed! {await self.bot.browser.get_cache_size()} posts retrieved\n")
 
-        self.bot.update_stat_file()
+        self.bot.stats.write_file()
         self.bot.post_sent = False
 
     @discord.slash_command(
@@ -166,14 +167,19 @@ class YuriBotCog(discord.Cog):
         )
         embed.set_image(url=image_url)
         embed.set_footer(
-            text=f"This is {self.bot.user.display_name}'s {self.bot.total_sent}"
+            text=f"This is {self.bot.user.display_name}'s {self.bot.stats.get_posts_sent() + 1}"
                  f"{choice(['st', 'nd', 'rd', 'th'])} post :3"
         )
 
-        print(f"Sending yuri #{self.bot.total_sent}: {image_url}")
+        print(f"Sending yuri #{self.bot.stats.get_posts_sent() + 1}: {image_url}")
 
         await send(embed=embed, view=view)
-        self.bot.total_sent += 1
+        
+        self.bot.stats.record_post_sent()
+        if tags_list:
+            for tag in tags_list:
+                self.bot.stats.record_tag_used(tag)
+
         self.bot.post_sent = True
 
 
@@ -203,11 +209,7 @@ class YuriBot(discord.Bot):
 
         self.large = large
         self.post_sent = True
-        self.stat_path = stat_path
-
-        with open(stat_path) as file:
-            self.contents = json.loads(file.read())
-            self.total_sent = self.contents["sent"]
+        self.stats = StatsManager(stat_path)
 
         with open(affirmations_path) as file:
             self.affirmations: list = json.loads(file.read())
@@ -227,15 +229,10 @@ class YuriBot(discord.Bot):
         print(f"{self.user} is ready and online!")
         await self.change_presence(status=discord.Status.online)  # doesnt work for some reason
 
-    def update_stat_file(self):
-        with open(self.stat_path, "w") as file:
-            self.contents["sent"] = self.total_sent
-            file.write(json.dumps(self.contents))
-
     async def close(self):
         print("\nClosing session and updating json...")
         await self.session.close()
-        self.update_stat_file()
+        self.stats.write_file()
         await super().close()
 
 
