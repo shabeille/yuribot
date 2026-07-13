@@ -17,6 +17,9 @@ class StatsManager:
     def record_post_sent(self):
         self._total_sent += 1
         
+    def get_tags_used(self) -> dict[str, int]:
+        return self._tag_counts
+        
     def record_tag_used(self, tag: str):
         if tag in self._tag_counts.keys():
             self._tag_counts[tag] += 1

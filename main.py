@@ -1,10 +1,11 @@
+import io
 import os
 import json
 import asyncio
 import aiohttp
 import argparse
 from random import choice
-
+from matplotlib import pyplot
 from dotenv import load_dotenv
 
 import discord
@@ -181,6 +182,27 @@ class YuriBotCog(discord.Cog):
                 self.bot.stats.record_tag_used(tag)
 
         self.bot.post_sent = True
+    
+    @discord.slash_command(
+        name="tag chart",
+        description="Shows a chart of the most searched for tags",
+        integration_types={
+            discord.IntegrationType.guild_install,
+            discord.IntegrationType.user_install
+        }
+    )
+    async def tag_stats(self, ctx: discord.ApplicationContext):
+        fix, ax = pyplot.subplots()
+        vals = self.bot.stats.get_tags_used()
+        bar_chart = ax.barh(list(vals.keys()), list(vals.values()), color='#cba6f7')
+        ax.set_xlabel("Searches")
+        ax.set_ylabel("Tag")
+        ax.set_title("Yuribot searches by tag")
+        
+        with io.BytesIO() as buffer:
+            fix.savefig(buffer, format="png")
+            buffer.seek(0)
+            await ctx.respond(file=discord.File(buffer, "graph.png"))
 
 
 class YuriBot(discord.Bot):
