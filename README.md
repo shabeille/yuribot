@@ -31,7 +31,6 @@ else:
 1. clone the repo
 2. create a .env file with `TOKEN=your_discord_token`
 3. install dependencies  
-   `pip install aiohttp python-dotenv py-cord audioop-lts`  
-   audioop-lts isn't used by the program but py-cord throws a fit if it's not installed. it's probably my fault but i cant be bothered to do anything about it :3
+   `pip install -r requirements.txt`
 4. run the bot  
    `python main.py`
