@@ -14,8 +14,8 @@ from discord.ext import tasks
 from safebooru import SafebooruBrowser
 from stats_mgr import StatsManager
 
-TAGS = ["yuri", "2girls"]
-BLACKLIST = [
+DEFAULT_TAGS = ["yuri", "2girls"]
+DEFAULT_BLACKLIST = [
     "nude", "ass_focus", "sexually_suggestive", "implied_sex",
     "blood", "violence", "loli"
 ]
@@ -50,6 +50,20 @@ parser.add_argument(
     "-l", "--latest",
     action="store_true",
     help="When enabled, this will retrieve the latest posts instead of random posts into the cache"
+)
+
+parser.add_argument(
+    "-b", "--blacklist",
+    nargs="*",
+    help="Tags to add to the blacklist, separated by spaces",
+    default=DEFAULT_BLACKLIST
+)
+
+parser.add_argument(
+    "-d", "--default-tags",
+    nargs="*",
+    help="Tags to include in every query (e.g. 'yuri'), separated by spaces",
+    default=DEFAULT_TAGS
 )
 
 args = parser.parse_args()
@@ -184,7 +198,7 @@ class YuriBotCog(discord.Cog):
         self.bot.post_sent = True
     
     @discord.slash_command(
-        name="tag chart",
+        name="tagchart",
         description="Shows a chart of the most searched for tags",
         integration_types={
             discord.IntegrationType.guild_install,
@@ -260,14 +274,14 @@ class YuriBot(discord.Bot):
 
 async def main():
     bot = YuriBot(
-        tags=TAGS,
+        tags=args.default_tags,
         cache_size=args.cache_size,
         refresh_time=args.refresh_time,
         latest=args.latest,
         large=args.large,
         stat_path=STAT_PATH,
         affirmations_path=AFFIRMATIONS_PATH,
-        blacklist=BLACKLIST
+        blacklist=args.blacklist
     )
 
     while True:
