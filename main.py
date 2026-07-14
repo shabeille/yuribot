@@ -216,7 +216,7 @@ class YuriBotCog(discord.Cog):
         ax.set_title("Yuribot searches by tag")
         
         with io.BytesIO() as buffer:
-            fix.savefig(buffer, format="png")
+            fix.savefig(buffer, format="png", bbox_inches='tight')
             buffer.seek(0)
             await ctx.respond(file=discord.File(buffer, "graph.png"))
 
