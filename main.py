@@ -206,9 +206,11 @@ class YuriBotCog(discord.Cog):
         }
     )
     async def tag_stats(self, ctx: discord.ApplicationContext):
+        await ctx.defer()
+        
         fix, ax = pyplot.subplots()
-        vals = self.bot.stats.get_tags_used()
-        bar_chart = ax.barh(list(vals.keys()), list(vals.values()), color='#cba6f7')
+        keys, vals = zip(*sorted(self.bot.stats.get_tags_used().items(), key=lambda x: x[1]))
+        bar_chart = ax.barh(keys, vals, color='#cba6f7')
         ax.set_xlabel("Searches")
         ax.set_ylabel("Tag")
         ax.set_title("Yuribot searches by tag")
@@ -263,7 +265,8 @@ class YuriBot(discord.Bot):
 
     async def on_ready(self):
         print(f"{self.user} is ready and online!")
-        await self.change_presence(status=discord.Status.online)  # doesnt work for some reason
+        act = discord.Game("watching yuri")
+        await self.change_presence(status=discord.Status.online, activity=act)
 
     async def close(self):
         print("\nClosing session and updating json...")
