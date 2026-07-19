@@ -247,13 +247,13 @@ class YuriBotCog(discord.Cog):
         fix, ax = pyplot.subplots()
         keys, vals = zip(*sorted(self.bot.stats.get_tags_used().items(), key=lambda x: x[1]))
 
-        fix.set_facecolor("#1e1e2e")
+        fix.set_facecolor("#181825")
         fix.set_edgecolor("#cdd6f4")
-        ax.barh(keys[:count], vals[:count], color='#cba6f7')
+        ax.barh(keys[-count:], vals[-count:], color='#cba6f7')
         ax.set_xlabel("Searches")
         ax.set_ylabel("Tag")
-        ax.set_title("Yuribot searches by tag")
-        ax.set_facecolor("#313244")
+        ax.set_title(f"top {count} yuribot searches by tag")
+        ax.set_facecolor("#1e1e2e")
         
         with io.BytesIO() as buffer:
             fix.savefig(buffer, format="png", bbox_inches='tight')
