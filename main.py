@@ -5,7 +5,8 @@ import asyncio
 import aiohttp
 import argparse
 from random import choice
-from matplotlib import pyplot
+
+from matplotlib import pyplot, rcParams
 from dotenv import load_dotenv
 
 import discord
@@ -76,6 +77,14 @@ token = os.getenv("TOKEN")
 if token is None:
     exit("You must specify your bot token in a .env file!")
 
+TEXT_COLOR = '#cdd6f4'
+rcParams['text.color'] = TEXT_COLOR
+rcParams['axes.labelcolor'] = TEXT_COLOR
+rcParams['xtick.color'] = TEXT_COLOR
+rcParams['ytick.color'] = TEXT_COLOR
+
+async def retfag(ctx):
+    return ["faggot"]
 
 def get_char_index_else_length(string: str, character: chr) -> int:
     if character not in string:
@@ -127,6 +136,23 @@ class YuriBotCog(discord.Cog):
     async def affirmation(self, ctx: discord.ApplicationContext):
         await ctx.respond(choice(self.bot.affirmations))
 
+    @staticmethod
+    async def autocomplete_yuri(ctx: discord.AutocompleteContext):
+        tag = ctx.options["tags"]
+        cog: discord.Cog = ctx.bot.get_cog("YuriBotCog")
+
+        tags = tag.split(',')
+
+        autocomplete_output = await cog.bot.browser.autocomplete(tag)
+        prefix = ','.join(tags[:-1]) + ',' if len(tags) > 1 else ''
+
+        autocomplete_options = [
+            prefix + option["value"]
+            for option in autocomplete_output
+        ]
+
+        return autocomplete_options
+
     @discord.slash_command(
         name="yuri",
         description="get random yuri",
@@ -139,15 +165,16 @@ class YuriBotCog(discord.Cog):
         "tags",
         type=discord.SlashCommandOptionType.string,
         default="",
-        description="Additional tags to filter through, separated by commas (e.g. 'kissing, 2girls')"
+        description="Additional tags to filter through, separated by commas (e.g. 'kissing,2girls')",
+        autocomplete=discord.utils.basic_autocomplete(autocomplete_yuri)
     )
     async def yuri(self, ctx: discord.ApplicationContext, tags: str):
         tags_list: list = [] if tags == "" \
             else ([tag.strip() for tag in (tags[:get_char_index_else_length(tags, '&')]).split(',')])
 
-        await self.send_yuri(ctx.respond, tags_list)
+        await self.send_yuri(ctx.respond, tags_list, ctx.defer)
 
-    async def send_yuri(self, send, tags_list: list):
+    async def send_yuri(self, send, tags_list: list, defer):
         try:
             response = await self.bot.browser.get_random(*tags_list)
         except IndexError:
@@ -158,6 +185,9 @@ class YuriBotCog(discord.Cog):
             )
             return
 
+        await defer()
+
+        #TODO make it download the image
         image_url = response["file_url"] if self.bot.large else response["sample_url"]
 
         view = RepeatView(self, tags_list)
@@ -205,15 +235,25 @@ class YuriBotCog(discord.Cog):
             discord.IntegrationType.user_install
         }
     )
-    async def tag_stats(self, ctx: discord.ApplicationContext):
+    @discord.option(
+        "count",
+        type=discord.SlashCommandOptionType.integer,
+        default=25,
+        description="number of tags to show in the chart (defaults to 25)"
+    )
+    async def tag_stats(self, ctx: discord.ApplicationContext, count: int):
         await ctx.defer()
         
         fix, ax = pyplot.subplots()
         keys, vals = zip(*sorted(self.bot.stats.get_tags_used().items(), key=lambda x: x[1]))
-        bar_chart = ax.barh(keys, vals, color='#cba6f7')
+
+        fix.set_facecolor("#1e1e2e")
+        fix.set_edgecolor("#cdd6f4")
+        ax.barh(keys[:count], vals[:count], color='#cba6f7')
         ax.set_xlabel("Searches")
         ax.set_ylabel("Tag")
         ax.set_title("Yuribot searches by tag")
+        ax.set_facecolor("#313244")
         
         with io.BytesIO() as buffer:
             fix.savefig(buffer, format="png", bbox_inches='tight')

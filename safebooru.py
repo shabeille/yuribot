@@ -2,6 +2,9 @@ from string import Template
 from urllib.parse import urljoin
 from random import choice
 
+import json
+import aiohttp
+
 website_url: str = "https://safebooru.org/"
 prefix: Template = Template(
     "index.php?page=dapi&s=post&q=index&json=1"
@@ -16,7 +19,7 @@ class SafebooruBrowser:
                  fetch_from_latest: bool = False,
                  rare_query_cache_size=100):
 
-        self._session = session
+        self._session: aiohttp.ClientSession = session
 
         if default_tags is not None and type(default_tags) not in (tuple, list):
             raise TypeError("Default tags must be passed in as a tuple or list")
@@ -24,7 +27,7 @@ class SafebooruBrowser:
         self.default_tags = [] if default_tags is None else list(default_tags)
 
         if not fetch_from_latest:
-            self.default_tags.append("sort:random") # took me WAY too long to remember that this exists
+            self.default_tags.append("sort:random")
 
         self.cache_size = cache_size
         self._cached_posts = []
@@ -68,6 +71,16 @@ class SafebooruBrowser:
 
     async def get_cache_size(self):
         return len(self._cached_posts)
+
+    async def autocomplete(self, query: str):
+        url = urljoin(website_url, f"autocomplete.php?q={(query.split(',')[-1]).strip(' ')}")
+
+        async with self._session.get(url) as resp:
+            response_stream = resp.content
+            data = await response_stream.read()
+            json_data = json.loads(data.decode())
+
+            return json_data or []
 
 
 def build_url(tags: list, count: int) -> str:
