@@ -2,6 +2,7 @@ import io
 import os
 import json
 import asyncio
+
 import aiohttp
 import argparse
 from random import choice
@@ -83,14 +84,18 @@ rcParams['axes.labelcolor'] = TEXT_COLOR
 rcParams['xtick.color'] = TEXT_COLOR
 rcParams['ytick.color'] = TEXT_COLOR
 
-async def retfag(ctx):
-    return ["faggot"]
 
 def get_char_index_else_length(string: str, character: chr) -> int:
     if character not in string:
         return len(string)
 
     return string.index(character)
+
+
+async def download_image(session: aiohttp.ClientSession, url) -> bytes:
+    async with session.get(url) as resp:
+        resp.auto_decompress = False
+        return await resp.read()
 
 
 class RepeatView(discord.ui.View):
@@ -187,8 +192,12 @@ class YuriBotCog(discord.Cog):
 
         await defer()
 
-        #TODO make it download the image
         image_url = response["file_url"] if self.bot.large else response["sample_url"]
+        buffer: bytes = await download_image(self.bot.session, image_url)
+        file = discord.File(
+            io.BytesIO(buffer),
+            f"yuri{os.path.splitext(image_url)[-1]}"
+        )
 
         view = RepeatView(self, tags_list)
 
@@ -210,7 +219,7 @@ class YuriBotCog(discord.Cog):
             description=f"Tags used: `{" ".join(tags_list)}`" if tags_list else None,
             color=discord.Colour.from_rgb(203, 166, 247)
         )
-        embed.set_image(url=image_url)
+        embed.set_image(url=f"attachment://{file.filename}")
         embed.set_footer(
             text=f"This is {self.bot.user.display_name}'s {self.bot.stats.get_posts_sent() + 1}"
                  f"{choice(['st', 'nd', 'rd', 'th'])} post :3"
@@ -218,7 +227,7 @@ class YuriBotCog(discord.Cog):
 
         print(f"Sending yuri #{self.bot.stats.get_posts_sent() + 1}: {image_url}")
 
-        await send(embed=embed, view=view)
+        await send(embed=embed, view=view, file=file)
         
         self.bot.stats.record_post_sent()
         if tags_list:
