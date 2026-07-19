@@ -109,7 +109,7 @@ class RepeatView(discord.ui.View):
         style=discord.ButtonStyle.primary
     )
     async def repeat_callback(self, button, interaction):
-        await self.cog.send_yuri(interaction.response.send_message, self.tags_list)
+        await self.cog.send_yuri(interaction.followup.send, self.tags_list, interaction.response.defer)
 
 
 class YuriBotCog(discord.Cog):
