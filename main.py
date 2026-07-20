@@ -231,8 +231,8 @@ class YuriBotCog(discord.Cog):
         
         self.bot.stats.record_post_sent()
         if tags_list:
-            for tag in tags_list:
-                self.bot.stats.record_tag_used(tag)
+            for tag in set(tags_list):
+                self.bot.stats.record_tag_used(tag.strip())
 
         self.bot.post_sent = True
     

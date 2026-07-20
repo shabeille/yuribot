@@ -21,6 +21,9 @@ class StatsManager:
         return self._tag_counts
         
     def record_tag_used(self, tag: str):
+        if len(tag) < 1:
+            return
+        
         if tag in self._tag_counts.keys():
             self._tag_counts[tag] += 1
         else:
