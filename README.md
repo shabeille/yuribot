@@ -11,7 +11,7 @@ it works by retrieving a Lot of posts tagged with yuri from safebooru every coup
 
 made sure to add your token in a .env file if you're hosting this yourself
 
-<img src="https://file.garden/Z8ob9c5zoiDzLl-Q/yuriexample.png" width="400" alt="example image of /yuri command output">
+<img src="https://shalo.dev/yuribot/example.png" width="400" alt="example image of /yuri command output">
 
 dependencies
 -
