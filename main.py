@@ -2,6 +2,7 @@ import io
 import os
 import json
 import asyncio
+import html
 
 import aiohttp
 import argparse
@@ -150,9 +151,10 @@ class YuriBotCog(discord.Cog):
         )
 
         autocomplete_options = [
-            prefix + option["value"]
+            prefix + html.unescape(option["value"])
             for option in autocomplete_output
             if option["value"] not in cog.bot.blacklist
+               and html.unescape(option["value"]) not in cog.bot.blacklist
         ]
 
         return autocomplete_options
