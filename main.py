@@ -19,7 +19,8 @@ from stats_mgr import StatsManager
 DEFAULT_TAGS = ["yuri", "2girls"]
 DEFAULT_BLACKLIST = [
     "nude", "ass_focus", "sexually_suggestive", "implied_sex",
-    "blood", "violence", "loli"
+    "blood", "loli", "ai_generated", "tagme",
+    "ass_grab", "pervert", "topless", "child"
 ]
 
 STAT_PATH = "stat.json"
@@ -101,7 +102,7 @@ class RepeatView(discord.ui.View):
         label="Repeat",
         style=discord.ButtonStyle.primary
     )
-    async def repeat_callback(self, button, interaction):
+    async def repeat_callback(self, _, interaction):
         await self.cog.send_yuri(interaction.followup.send, self.tags_list, interaction.response.defer)
 
 
@@ -168,7 +169,7 @@ class YuriBotCog(discord.Cog):
         "tags",
         type=discord.SlashCommandOptionType.string,
         default="",
-        description="Additional tags to filter through, separated by commas (e.g. 'kissing,2girls')",
+        description="Additional tags to filter through, separated by commas (e.g. 'kiss,leash')",
         autocomplete=discord.utils.basic_autocomplete(autocomplete_yuri)
     )
     async def yuri(self, ctx: discord.ApplicationContext, tags: str):
