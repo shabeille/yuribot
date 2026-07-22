@@ -73,7 +73,7 @@ class SafebooruBrowser:
         return len(self._cached_posts)
 
     async def autocomplete(self, query: str):
-        url = urljoin(website_url, f"autocomplete.php?q={(query.split(',')[-1]).strip(' ')}")
+        url = urljoin(website_url, f"autocomplete.php?q={(query.split(',')[-1]).strip(' ').lstrip('-')}")
 
         async with self._session.get(url) as resp:
             response_stream = resp.content

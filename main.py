@@ -85,13 +85,6 @@ rcParams['xtick.color'] = TEXT_COLOR
 rcParams['ytick.color'] = TEXT_COLOR
 
 
-def get_char_index_else_length(string: str, character: chr) -> int:
-    if character not in string:
-        return len(string)
-
-    return string.index(character)
-
-
 async def download_image(session: aiohttp.ClientSession, url) -> bytes:
     async with session.get(url) as resp:
         resp.auto_decompress = False
@@ -143,17 +136,22 @@ class YuriBotCog(discord.Cog):
 
     @staticmethod
     async def autocomplete_yuri(ctx: discord.AutocompleteContext):
-        tag = ctx.options["tags"]
-        cog: discord.Cog = ctx.bot.get_cog("YuriBotCog")
+        tag: str = ctx.options["tags"]
+        cog = ctx.bot.get_cog("YuriBotCog")
+        assert isinstance(cog, YuriBotCog)
 
         tags = tag.split(',')
 
         autocomplete_output = await cog.bot.browser.autocomplete(tag)
-        prefix = ','.join(tags[:-1]) + ',' if len(tags) > 1 else ''
+        prefix = (
+            (','.join(tags[:-1]) + ',' if len(tags) > 1 else '') # for all da preceding tagz
+            + ('-' if len(tags[-1]) > 0 and tags[-1][0] == '-' else '') # for da blacklisted tag. meow :3 !!
+        )
 
         autocomplete_options = [
             prefix + option["value"]
             for option in autocomplete_output
+            if option["value"] not in cog.bot.blacklist
         ]
 
         return autocomplete_options
@@ -174,8 +172,11 @@ class YuriBotCog(discord.Cog):
         autocomplete=discord.utils.basic_autocomplete(autocomplete_yuri)
     )
     async def yuri(self, ctx: discord.ApplicationContext, tags: str):
-        tags_list: list = [] if tags == "" \
-            else ([tag.strip() for tag in (tags[:get_char_index_else_length(tags, '&')]).split(',')])
+        index = len(tags) if '&' not in tags else tags.index('&')
+        tags_list: list = (
+            [] if tags == "" else (
+                [tag.strip() for tag in (tags[:index]).split(',')]
+        ))
 
         await self.send_yuri(ctx.respond, tags_list, ctx.defer)
 
@@ -183,7 +184,6 @@ class YuriBotCog(discord.Cog):
         try:
             response = await self.bot.browser.get_random(*tags_list)
         except IndexError:
-
             await send(
                 "Could not find any yuri :pensive: Make sure your tags are correct, or try again later!! :3",
                 ephemeral=True
@@ -226,8 +226,9 @@ class YuriBotCog(discord.Cog):
         )
 
         print(f"Sending yuri #{self.bot.stats.get_posts_sent() + 1}: {image_url}")
-
         await send(embed=embed, view=view, file=file)
+
+        file.close()
         
         self.bot.stats.record_post_sent()
         if tags_list:
@@ -297,6 +298,7 @@ class YuriBot(discord.Bot):
         self.large = large
         self.post_sent = True
         self.stats = StatsManager(stat_path)
+        self.blacklist: list | tuple = blacklist
 
         with open(affirmations_path) as file:
             self.affirmations: list = json.loads(file.read())
