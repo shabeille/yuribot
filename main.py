@@ -1,5 +1,6 @@
 import io
 import os
+import re
 import json
 import asyncio
 import html
@@ -85,6 +86,26 @@ rcParams['text.color'] = TEXT_COLOR
 rcParams['axes.labelcolor'] = TEXT_COLOR
 rcParams['xtick.color'] = TEXT_COLOR
 rcParams['ytick.color'] = TEXT_COLOR
+
+
+# function stolen from geeksforgeeks
+def is_valid_url(string) -> bool:
+    # Regex to check valid URL
+    regex = ("((http|https)://)(www.)?" +
+             "[a-zA-Z0-9@:%._\\+~#?&//=]" +
+             "{2,256}\\.[a-z]" +
+             "{2,6}\\b([-a-zA-Z0-9@:%" +
+             "._\\+~#?&//=]*)")
+
+    p = re.compile(regex)
+
+    if string is None:
+        return False
+
+    if re.search(p, string):
+        return True
+    else:
+        return False
 
 
 async def download_image(session: aiohttp.ClientSession, url) -> bytes:
@@ -196,42 +217,42 @@ class YuriBotCog(discord.Cog):
         await defer()
 
         image_url = response["file_url"] if self.bot.large else response["sample_url"]
-        buffer: bytes = await download_image(self.bot.session, image_url)
-        file = discord.File(
-            io.BytesIO(buffer),
-            f"yuri{os.path.splitext(image_url)[-1]}"
-        )
+        image_bytes: bytes = await download_image(self.bot.session, image_url)
 
-        view = RepeatView(self, tags_list)
+        with io.BytesIO(image_bytes) as buffer:
+            file = discord.File(
+                buffer,
+                f"yuri{os.path.splitext(image_url)[-1]}"
+            )
 
-        if response["source"] and response["source"] != "":
+            view = RepeatView(self, tags_list)
+
+            if len(response["source"]) <= 512 and is_valid_url(response["source"]):
+                view.add_item(discord.ui.Button(
+                    style=discord.ButtonStyle.url,
+                    label="Original Source",
+                    url=response["source"]
+                ))
+
             view.add_item(discord.ui.Button(
                 style=discord.ButtonStyle.url,
-                label="Original Source",
-                url=response["source"]
+                label="View on Safebooru",
+                url=f"https://safebooru.org/index.php?page=post&s=view&id={response['id']}"
             ))
 
-        view.add_item(discord.ui.Button(
-            style=discord.ButtonStyle.url,
-            label="View on Safebooru",
-            url=f"https://safebooru.org/index.php?page=post&s=view&id={response['id']}"
-        ))
+            embed = discord.Embed(
+                title="Yuri!!!",
+                description=f"Tags used: `{" ".join(tags_list)}`" if tags_list else None,
+                color=discord.Colour.from_rgb(203, 166, 247)
+            )
+            embed.set_image(url=f"attachment://{file.filename}")
+            embed.set_footer(
+                text=f"This is {self.bot.user.display_name}'s {self.bot.stats.get_posts_sent() + 1}"
+                     f"{choice(['st', 'nd', 'rd', 'th'])} post :3"
+            )
 
-        embed = discord.Embed(
-            title="Yuri!!!",
-            description=f"Tags used: `{" ".join(tags_list)}`" if tags_list else None,
-            color=discord.Colour.from_rgb(203, 166, 247)
-        )
-        embed.set_image(url=f"attachment://{file.filename}")
-        embed.set_footer(
-            text=f"This is {self.bot.user.display_name}'s {self.bot.stats.get_posts_sent() + 1}"
-                 f"{choice(['st', 'nd', 'rd', 'th'])} post :3"
-        )
-
-        print(f"Sending yuri #{self.bot.stats.get_posts_sent() + 1}: {image_url}")
-        await send(embed=embed, view=view, file=file)
-
-        file.close()
+            print(f"Sending yuri #{self.bot.stats.get_posts_sent() + 1}: {image_url}")
+            await send(embed=embed, view=view, file=file)
         
         self.bot.stats.record_post_sent()
         if tags_list:
@@ -256,22 +277,26 @@ class YuriBotCog(discord.Cog):
     )
     async def tag_stats(self, ctx: discord.ApplicationContext, count: int):
         await ctx.defer()
-        
-        fix, ax = pyplot.subplots()
-        keys, vals = zip(*sorted(self.bot.stats.get_tags_used().items(), key=lambda x: x[1]))
 
-        fix.set_facecolor("#181825")
-        fix.set_edgecolor("#cdd6f4")
-        ax.barh(keys[-count:], vals[-count:], color='#cba6f7')
-        ax.set_xlabel("Searches")
-        ax.set_ylabel("Tag")
-        ax.set_title(f"top {count} yuribot searches by tag")
-        ax.set_facecolor("#1e1e2e")
-        
-        with io.BytesIO() as buffer:
-            fix.savefig(buffer, format="png", bbox_inches='tight')
-            buffer.seek(0)
-            await ctx.respond(file=discord.File(buffer, "graph.png"))
+        fix, ax = pyplot.subplots()
+
+        try:
+            keys, vals = zip(*sorted(self.bot.stats.get_tags_used().items(), key=lambda x: x[1]))
+
+            fix.set_facecolor("#181825")
+            fix.set_edgecolor("#cdd6f4")
+            ax.barh(keys[-count:], vals[-count:], color='#cba6f7')
+            ax.set_xlabel("Searches")
+            ax.set_ylabel("Tag")
+            ax.set_title(f"top {count} yuribot searches by tag")
+            ax.set_facecolor("#1e1e2e")
+
+            with io.BytesIO() as buffer:
+                fix.savefig(buffer, format="png", bbox_inches='tight')
+                buffer.seek(0)
+                await ctx.respond(file=discord.File(buffer, "graph.png"))
+        finally:
+            pyplot.close(fix)
 
 
 class YuriBot(discord.Bot):
