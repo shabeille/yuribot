@@ -1,23 +1,25 @@
+import json
+from random import choice
 from string import Template
 from urllib.parse import urljoin
-from random import choice
 
-import json
 import aiohttp
 
 website_url: str = "https://safebooru.org/"
 prefix: Template = Template(
-    "index.php?page=dapi&s=post&q=index&json=1"
-    "&limit=${limit}"
-    "&tags=${tags}"
+    "index.php?page=dapi&s=post&q=index&json=1&limit=${limit}&tags=${tags}"
 )
 
+
 class SafebooruBrowser:
-    def __init__(self, session,
-                 cache_size=1000,
-                 default_tags=None,
-                 fetch_from_latest: bool = False,
-                 rare_query_cache_size=100):
+    def __init__(
+        self,
+        session,
+        cache_size=1000,
+        default_tags=None,
+        fetch_from_latest: bool = False,
+        rare_query_cache_size=100,
+    ):
 
         self._session: aiohttp.ClientSession = session
 
@@ -52,7 +54,8 @@ class SafebooruBrowser:
             return choice(self._cached_posts)
 
         tagged_posts = [
-            post for post in self._cached_posts
+            post
+            for post in self._cached_posts
             if all(tag in post["tags"].split() for tag in args)
         ]
 
@@ -73,7 +76,10 @@ class SafebooruBrowser:
         return len(self._cached_posts)
 
     async def autocomplete(self, query: str):
-        url = urljoin(website_url, f"autocomplete.php?q={(query.split(',')[-1]).strip(' ').lstrip('-')}")
+        url = urljoin(
+            website_url,
+            f"autocomplete.php?q={(query.split(',')[-1]).strip(' ').lstrip('-')}",
+        )
 
         async with self._session.get(url) as resp:
             response_stream = resp.content
@@ -84,10 +90,4 @@ class SafebooruBrowser:
 
 
 def build_url(tags: list, count: int) -> str:
-    return urljoin(
-        website_url,
-        prefix.substitute(
-            limit = count,
-            tags = '+'.join(tags)
-        )
-    )
+    return urljoin(website_url, prefix.substitute(limit=count, tags="+".join(tags)))
