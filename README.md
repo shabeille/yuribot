@@ -22,7 +22,7 @@ dependencies
 commands
 -
 `/yuri` - sends a random yuri image from the cache  
-`/affirmation` - tells you you're a good girl
+`/affirmation` - tells you you're a good girl  
 `/tagchart` - shows a chart of the frequency of tags passed into `/yuri`
 
 setup
